@@ -1,7 +1,6 @@
 # environments
-.env
+settings.py
 venv/
-.vscode/
 
 # other credentials
 client_secret.json
