@@ -1,7 +1,14 @@
 # environments
-settings.py
+env.py
 venv/
 
-# other credentials
+# credentials
 client_secret.json
-token.pkl
+token.json
+
+# example
+Notion-GCal-2WaySync-Public.py
+test_obj.json
+
+.idea/
+__pycache__/
