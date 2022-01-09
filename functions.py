@@ -148,12 +148,19 @@ def retrieve_events(result_list):
             calendar_name = calendar_dictionary[el['properties'][constants.calendar_notion_name]['select']['name']]
         except KeyError:
             calendar_name = calendar_dictionary[env.DEFAULT_CALENDAR_NAME]
+        print("I am el", el)
 
-        current_calendar_name = el['properties'][
-            constants.current_calendar_id_notion_name]['rich_text'][0]['text']['content']
+        try:
+            current_calendar_name = el['properties'][
+                constants.current_calendar_id_notion_name]['rich_text'][0]['text']['content']
+        except IndexError:
+            current_calendar_name = None
+        try:
+            event_id = el['properties'][constants.gcal_event_id_notion_name]['rich_text'][0]['text']['content']
+        except IndexError:
+            event_id = None
 
         description = make_event_description(initiative, extra_info)
-        event_id = "WHAT"
 
         print("I am current_calendar_name", current_calendar_name)
         print(task_name, start_date, end_time, description, calendar_name, "end")
@@ -261,6 +268,7 @@ def create_or_update_event(event_name, event_description,
 
     #  Create event
     else:
+        print("I am here creating event")
         execution_instance = service.events().insert(calendarId=calendar_name, body=event).execute()
 
     return execution_instance['id']
@@ -320,5 +328,5 @@ def update_notion_tasks():
 
 if __name__ == '__main__':
     export_new_notion_tasks()
-    # check_need_for_update()
-    # update_notion_tasks()
+    check_need_for_update()
+    update_notion_tasks()

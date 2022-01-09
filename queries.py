@@ -19,7 +19,7 @@ not_on_gcal_query = {
 on_gcal_query = {
     "property": constants.on_gcal_notion_name,
     "checkbox": {
-        "equals": False
+        "equals": True
     }
 }
 
