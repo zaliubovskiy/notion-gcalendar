@@ -512,12 +512,11 @@ if len(resultList) > 0:
                 },
             )
 
-
 else:
     print("Nothing new added to GCal")
 
 ###########################################################################
-##### Part 2: Updating GCal Events that Need To Be Updated (Changed on Notion but need to be changed on GCal)
+# Part 2: Updating GCal Events that Need To Be Updated (Changed on Notion but need to be changed on GCal)
 ###########################################################################
 
 
@@ -565,7 +564,8 @@ resultList = my_page['results']
 if len(resultList) > 0:
     for i, el in enumerate(resultList):
         pageId = el['id']
-        my_page = notion.pages.update(  ##### This checks off that the event has been put on Google Calendar
+        # This checks off that the event has been put on Google Calendar
+        my_page = notion.pages.update(
             **{
                 "page_id": pageId,
                 "properties": {
@@ -584,7 +584,7 @@ if len(resultList) > 0:
             },
         )
 
-    ## Filter events that have been updated since the GCal event has been made
+# Filter events that have been updated since the GCal event has been made
 
 # this query will return a dictionary that we will parse for information that we want
 # look for events that are today or in the next week
@@ -670,7 +670,7 @@ if len(resultList) > 0:
         TaskNames.append(el['properties'][Task_Notion_Name]['title'][0]['text']['content'])
         start_Dates.append(el['properties'][Date_Notion_Name]['date']['start'])
 
-        if el['properties'][Date_Notion_Name]['date']['end'] != None:
+        if el['properties'][Date_Notion_Name]['date']['end'] is not None:
             end_Times.append(el['properties'][Date_Notion_Name]['date']['end'])
         else:
             end_Times.append(el['properties'][Date_Notion_Name]['date']['start'])
@@ -737,7 +737,6 @@ if len(resultList) > 0:
                 },
             },
         )
-
 
 
 else:
