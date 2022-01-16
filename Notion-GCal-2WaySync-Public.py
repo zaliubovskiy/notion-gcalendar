@@ -49,7 +49,7 @@ DELETE_OPTION = env.DELETE_OPTION
 # TO DELETE:
 Task_Notion_Name = constants.task_notion_name
 Date_Notion_Name = constants.date_notion_name
-Initiative_Notion_Name = constants.initiative_notion_name
+Initiative_Notion_Name = constants.status_notion_name
 ExtraInfo_Notion_Name = constants.extra_info_notion_name
 On_GCal_Notion_Name = constants.on_gcal_notion_name
 NeedGCalUpdate_Notion_Name = constants.need_gcal_update_notion_name
