@@ -32,7 +32,7 @@ calendar_name_default_query = {
 }
 
 # Checks if the task is 'Done'
-done_query = {
+not_done_query = {
     "property": constants.delete_notion_name,
     "checkbox": {
         "equals": False
@@ -63,6 +63,12 @@ need_cal_update_query = {
     }
 }
 
+not_need_cal_update_query = {
+    "property": constants.need_gcal_update_notion_name,
+    "checkbox": {
+        "equals": False
+    }
+}
 
 # Checks of the value Calendar is empty foe the task
 empty_calendar_query = {
@@ -90,7 +96,7 @@ def query_new_tasks(notion):
                             next_week_query
                         ]
                     },
-                    done_query
+                    not_done_query
                 ]
             }
         }
@@ -113,7 +119,7 @@ def query_tasks_without_calendar(notion):
                             next_week_query
                         ]
                     },
-                    done_query
+                    not_done_query
                 ]
             },
         }
@@ -138,9 +144,34 @@ def get_tasks_to_update(notion):
                             next_week_query
                         ]
                     },
-                    done_query
+                    not_done_query
                 ]
             },
         }
     )
+    return notion_page
+
+
+# Retrieve tasks already in GCal, that don't need to be updated, and are today or in the next week
+def query_tasks_already_synced(notion):
+
+    notion_page = notion.databases.query(
+        **{
+            "database_id": env.DATABASE_ID,
+            "filter": {
+                "and": [
+                    not_need_cal_update_query,
+                    on_gcal_query,
+                    {
+                        "or": [
+                            today_date_query,
+                            next_week_query
+                        ]
+                    },
+                    not_done_query
+                ]
+            },
+        }
+    )
+
     return notion_page

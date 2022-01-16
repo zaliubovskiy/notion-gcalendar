@@ -17,19 +17,20 @@ calendar_dictionary = {
     env.DEFAULT_CALENDAR_NAME: env.DEFAULT_CALENDAR_ID,
 }
 
-# task_names = []
-# start_dates = []
-# end_times = []
-# initiatives = []
-# extra_info = []
-# url_list = []
-# cal_event_id_list = []
-# calendar_list = []
-
-
 def notion_time():
     return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
 
+
+def parse_time(start_date, end_time):
+    if (len(start_date) and len(end_time)) == 29:
+        converted_start_date = datetime.strptime(start_date[:-6], '%Y-%m-%dT%H:%M:%S.%f')
+        converted_end_date = datetime.strptime(end_time[:-6], '%Y-%m-%dT%H:%M:%S.%f')
+    elif (len(start_date) and len(end_time)) == 10:
+        converted_start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        converted_end_date = datetime.strptime(end_time, '%Y-%m-%d')
+    else:
+        print("Unexpected datetime format")
+        break
 
 def make_task_url(ending, url_root):
     return url_root + ending.replace('-', '')
@@ -123,7 +124,6 @@ def update_notion_page_2(page_id, cal_event_id, calendar_name):
 
 
 def retrieve_events(result_list):
-
     # Parse all the needed elements from the json object returned by Notion
     for i, el in enumerate(result_list):
         page_id = el['id']
@@ -177,12 +177,12 @@ def retrieve_events(result_list):
             break
 
         if calendar_name == current_calendar_name:
-            cal_event_id = create_or_update_event(task_name, description, converted_start_date,
-                                                  url_link, converted_end_date, calendar_name,
-                                                  current_calendar_name, event_id)
+            cal_event_id = create_or_update_event_notion_to_gcal(task_name, description, converted_start_date,
+                                                                 url_link, converted_end_date, calendar_name,
+                                                                 current_calendar_name, event_id)
         else:
-            cal_event_id = create_or_update_event(task_name, description, converted_start_date,
-                                                  url_link, converted_end_date, calendar_name)
+            cal_event_id = create_or_update_event_notion_to_gcal(task_name, description, converted_start_date,
+                                                                 url_link, converted_end_date, calendar_name)
 
         # VERY BAD SOLUTION. TO DEBUG!
         if calendar_name == calendar_dictionary[env.DEFAULT_CALENDAR_NAME]:
@@ -195,11 +195,10 @@ def retrieve_events(result_list):
     return
 
 
-def create_or_update_event(event_name, event_description,
-                           event_start_time, source_url,
-                           event_end_time, calendar_name,
-                           current_calendar_name=None, event_id=None):
-
+def create_or_update_event_notion_to_gcal(event_name, event_description,
+                                          event_start_time, source_url,
+                                          event_end_time, calendar_name,
+                                          current_calendar_name=None, event_id=None):
     # Only date of the task provided:
     if event_start_time.hour == 0 and event_start_time.minute == 0:
 
@@ -274,26 +273,23 @@ def create_or_update_event(event_name, event_description,
     return execution_instance['id']
 
 
-def export_new_notion_tasks():
-
+def export_tasks_notion_to_gcal():
     notion_page = queries.query_new_tasks(notion)
     result_list = notion_page['results']
 
     if len(result_list) > 0:
         retrieve_events(result_list)
         return print(f"Success: {len(result_list)} tasks have been exported GCal -> Notion")
-    return print("No new tasks found")
+    return print("No new Notion tasks found")
 
 
-def check_need_for_update():
-
+def check_tasks_without_calendar():
     notion_page = queries.query_tasks_without_calendar(notion)
 
     result_list = notion_page['results']
 
     if len(result_list) > 0:
         for i, el in enumerate(result_list):
-
             page_id = el['id']
             notion.pages.update(
                 **{
@@ -315,7 +311,8 @@ def check_need_for_update():
             )
 
 
-def update_notion_tasks():
+def update_tasks_notion_to_gcal():
+    check_tasks_without_calendar()
 
     notion_page = queries.get_tasks_to_update(notion)
     result_list = notion_page['results']
@@ -323,10 +320,83 @@ def update_notion_tasks():
     if len(result_list) > 0:
         retrieve_events(result_list)
         return print(f"Success: {len(result_list)} tasks have been updated GCal -> Notion")
-    return print("No tasks to update")
+    return print("No GCal -> Notion tasks to update")
+
+
+def just_a_test_function_name(result_list):
+    for result in result_list:
+        page_id = result['id']
+        # TO COMPARE: current_calendar_id, extra_info, done, calendar, date,
+
+        # Now we take NOTION VALUES of the task instance
+
+        # notion_date_start =
+        # notion_date_end =
+        # gcal_event_id =
+        # notion_calendar_name or DEFAULT =
+        # notion_current_calendar_id_notion_name =
+
+        # Format the date
+        # notion_start_date = datetime.strptime(date_start)
+        # notion_end_date = datetime.strptime(date_end)
+
+        # try:
+        #     event_instance = service.events().get(
+        #          calendarId=constants.current_calendar_id_notion_name,
+        #          eventId=gcal_event_id).execute()
+
+        # And Now we take Google Calendar values
+        # gcal_start_date = datetime.strptime(event_instance['start']['dateTime'][:-6], "%Y-%m-%dT%H:%M:%S")
+        # Check here if its date or dateTime value
+
+        # gcal_end_date = the same as above
+
+        # Now we compare two datasets:
+        #    Check dateTime formats and what API returns
+        #    compare start_time, end_time, description,
+
+        # except:
+        #     print('Event not found')
+        #     print('That`s bad because it means that Notion -> Google ')
+        #     print('synchronization works not correctly')
+
+
+def update_tasks_gcal_to_notion():
+    # Query notion tasks already in Gcal, don't have to be updated, and are today or in the next week
+    notion_page = queries.query_tasks_already_synced(notion)
+
+    result_list = notion_page['results']
+
+    if len(result_list) > 0:
+        just_a_test_function_name(result_list)
+        return print(f"Success: {len(result_list)} tasks have been updated Notion -> GCal")
+    return print("No Notion -> GCal tasks to update")
+
+
+# def export_tasks_gcal_to_notion():
+#     return print("No new GCal tasks found")
+
+def test_func():
+    notion_page = queries.query_tasks_already_synced(notion)
+
+    result_list = notion_page['results']
+
+    for result in result_list:
+        print('-----------------------------------------------------')
+        page_id = result['id']
+        print('Page ID', page_id)
+        print('RESULT:')
+        print(result)
 
 
 if __name__ == '__main__':
-    export_new_notion_tasks()
-    check_need_for_update()
-    update_notion_tasks()
+    # Function to set GCalEventID to 'notInCalendar'
+
+    # Synchronization N2GCal
+    export_tasks_notion_to_gcal()
+    update_tasks_notion_to_gcal()
+    # Synchronization GCal2N
+    # update_tasks_gcal_to_notion()
+    # export_tasks_gcal_to_notion()
+    test_func()
+

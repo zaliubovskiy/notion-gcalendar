@@ -745,10 +745,10 @@ else:
 today_date = datetime.today().strftime("%Y-%m-%d")
 
 ###########################################################################
-##### Part 3: Sync GCal event updates for events already in Notion back to Notion!
+# Part 3: Sync GCal event updates for events already in Notion back to Notion!
 ###########################################################################
 
-##Query notion tasks already in Gcal, don't have to be updated, and are today or in the next week
+# Query notion tasks already in Gcal, don't have to be updated, and are today or in the next week
 my_page = notion.databases.query(
     **{
         "database_id": database_id,
@@ -798,9 +798,9 @@ my_page = notion.databases.query(
 resultList = my_page['results']
 
 # Comparison section:
-# We need to see what times between GCal and Notion are not the same, so we are going to convert all of the notion date/times into 
-## datetime values and then compare that against the datetime value of the GCal event. If they are not the same, then we change the Notion 
-### event as appropriate
+# We need to see what times between GCal and Notion are not the same, so we are going to convert all of the
+# notion date/times into datetime values and then compare that against the datetime value of the GCal event.
+# If they are not the same, then we change the Notion event as appropriate
 notion_IDs_List = []
 notion_start_datetimes = []
 notion_end_datetimes = []
