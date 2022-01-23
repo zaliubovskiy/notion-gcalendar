@@ -1,9 +1,29 @@
 from datetime import datetime
 
+import pytz
+
 import constants
 import env
 
+time_zone = pytz.timezone(env.TIMEZONE)
 today_date = datetime.today().strftime("%Y-%m-%d")
+notion_time = datetime.now(time_zone).isoformat()
+
+# BASE DICT TO UPDATE/CREATE Notin TASK
+base_dict = {
+    constants.status_notion_name: {
+        'select': {
+            "name": "Scheduled",
+            "color": "yellow"
+        }
+    },
+    constants.last_updated_time_notion_name: {
+        "date": {
+            'start': notion_time,
+            'end': None,
+        }
+    }
+}
 
 # SEARCH QUERIES SEPARATELY
 
@@ -36,6 +56,13 @@ not_done_query = {
     "property": constants.delete_notion_name,
     "checkbox": {
         "equals": False
+    }
+}
+
+done_query = {
+    "property": constants.delete_notion_name,
+    "checkbox": {
+        "equals": True
     }
 }
 
@@ -174,4 +201,24 @@ def query_tasks_already_synced(notion):
         }
     )
 
+    return notion_page
+
+
+def query_all_tasks_not_done(notion):
+    notion_page = notion.databases.query(
+        **{
+            "database_id": env.DATABASE_ID,
+            "filter": not_done_query
+        }
+    )
+    return notion_page
+
+
+def query_all_tasks_done(notion):
+    notion_page = notion.databases.query(
+        **{
+            "database_id": env.DATABASE_ID,
+            "filter": done_query
+        }
+    )
     return notion_page

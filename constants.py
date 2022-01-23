@@ -1,7 +1,6 @@
 task_notion_name = 'Task'
 date_notion_name = 'Do Date'
 status_notion_name = 'Status'
-# extra_info_notion_name = 'Extra Info'
 on_gcal_notion_name = 'On GCal?'
 need_gcal_update_notion_name = 'NeedGCalUpdate'
 gcal_event_id_notion_name = 'GCal Event ID'

@@ -1191,7 +1191,7 @@ ALL_notion_gCal_Ids = []
 for result in resultList:
     ALL_notion_gCal_Ids.append(result['properties'][GCalEventId_Notion_Name]['rich_text'][0]['text']['content'])
 
-##Get the GCal Ids and other Event Info from Google Calendar
+# Get the GCal Ids and other Event Info from Google Calendar
 
 events = []
 for el in calendarDictionary.keys():  # get all the events from all calendars of interest
