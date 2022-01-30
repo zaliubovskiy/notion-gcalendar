@@ -57,7 +57,7 @@ GCalEventId_Notion_Name = constants.gcal_event_id_notion_name
 LastUpdatedTime_Notion_Name = constants.last_updated_time_notion_name
 Calendar_Notion_Name = constants.calendar_notion_name
 Current_Calendar_Id_Notion_Name = constants.current_calendar_id_notion_name
-Delete_Notion_Name = constants.delete_notion_name
+Delete_Notion_Name = constants.done_notion_name
 LastEditedTime_Notion_Name = constants.last_edited_time_notion_name
 
 #######################################################################################

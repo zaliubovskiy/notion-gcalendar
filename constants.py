@@ -7,5 +7,7 @@ gcal_event_id_notion_name = 'GCal Event ID'
 last_updated_time_notion_name = 'Last Updated Time'
 calendar_notion_name = 'Calendar'
 current_calendar_id_notion_name = 'Current Calendar ID'
-delete_notion_name = 'Done'
+done_notion_name = 'Done'
 last_edited_time_notion_name = 'Last Edited Time'
+
+text_not_in_calendar = 'notInCalendar'

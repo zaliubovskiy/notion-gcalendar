@@ -98,7 +98,13 @@ def update_notion_page(page_id, cal_event_id, calendar_id, calendar_name):
                     'select': {
                         "name": calendar_name
                     }
-                }
+                },
+                constants.status_notion_name: {
+                    'select': {
+                        "name": "Scheduled",
+                        "color": "yellow"
+                    }
+                },
             }
         }
     )
@@ -257,7 +263,10 @@ def check_tasks_without_calendar():
 
 
 def get_google_calendar_info(gcal_instance):
-    gcal_task_name = gcal_instance['summary']
+    try:
+        gcal_task_name = gcal_instance['summary']
+    except KeyError:
+        gcal_task_name = "No title"
     gcal_cal_id = gcal_instance['organizer']['email']
 
     try:
@@ -301,7 +310,6 @@ def get_notion_info(notion_instance):
 
 
 def update_tasks_notion_to_gcal():
-
     check_tasks_without_calendar()
 
     notion_page = queries.get_tasks_to_update(notion)
@@ -348,10 +356,12 @@ def compare_gcal_notion_tasks(result_list):
         gcal_instance = service.events().get(calendarId=current_calendar_id, eventId=event_id).execute()
 
         # GET NOTION VALUES
-        notion_task_name, notion_gcal_id, notion_start_date, notion_end_date, notion_calendar_name = get_notion_info(result)
+        notion_task_name, notion_gcal_id, notion_start_date, notion_end_date, notion_calendar_name = get_notion_info(
+            result)
 
         # GET GCAL VALUES
-        gcal_task_name, gcal_cal_id, gcal_start_date, gcal_end_date, gcal_calendar_name = get_google_calendar_info(gcal_instance)
+        gcal_task_name, gcal_cal_id, gcal_start_date, gcal_end_date, gcal_calendar_name = get_google_calendar_info(
+            gcal_instance)
 
         # PREPARE BASE UPDATE QUERY
 
@@ -459,101 +469,154 @@ def update_tasks_gcal_to_notion():
 
 
 def export_tasks_gcal_to_notion():
-    notion_page = queries.query_all_tasks_not_done(notion)
+    notion_page = queries.query_all_tasks_this_week(notion)
 
     result_list = notion_page['results']
 
     # We take all the GCal event IDs from the Notion
     list_of_event_ids = []
-    for result in result_list:
-        try:
-            event_id = result['properties'][constants.gcal_event_id_notion_name]['rich_text'][0]['text']['content']
-        except IndexError:
-            continue
-        list_of_event_ids.append(event_id)
-    print("i am a list_of_event_ids", list_of_event_ids)
-    google_events = []
+    if len(result_list) > 0:
+        for result in result_list:
+            try:
+                event_id = result['properties'][constants.gcal_event_id_notion_name]['rich_text'][0]['text']['content']
+            except IndexError:
+                continue
+            list_of_event_ids.append(event_id)
+        print("i am a list_of_event_ids", list_of_event_ids)
+        google_events = 0
 
-    # We take all the calendars from Google Calendar, one by one
-    for e in calendar_dictionary.keys():
-        current_calendar_id = calendar_dictionary[e]
+        # We take all the calendars from Google Calendar, one by one
+        for e in calendar_dictionary.keys():
+            current_calendar_id = calendar_dictionary[e]
 
-        # Get all the tasks from the current calendar in the timeframe time_min - time_max
-        events = service.events().list(calendarId=current_calendar_id,
-                                       timeMin=time_min,
-                                       timeMax=time_max,
-                                       maxResults=100).execute()
-        # We take all the events one by one and check if they are on Notion:
-        for event in events['items']:
-            event_id = event['id']
-            # If they are not on Notion, we create the Task
-            if event_id not in list_of_event_ids:
-                print("I am exporting the task:", event['summary'])
-                gcal_instance = service.events().get(calendarId=current_calendar_id, eventId=event_id).execute()
+            # Get all the tasks from the current calendar in the timeframe time_min - time_max
+            events = service.events().list(calendarId=current_calendar_id,
+                                           timeMin=time_min,
+                                           timeMax=time_max,
+                                           maxResults=100).execute()
+            # We take all the events one by one and check if they are on Notion:
+            for event in events['items']:
+                event_id = event['id']
+                # If they are not on Notion, we create the Task
+                if event_id not in list_of_event_ids:
+                    google_events += 1
+                    print("I am exporting the task:", event['summary'])
+                    gcal_instance = service.events().get(calendarId=current_calendar_id, eventId=event_id).execute()
 
-                gcal_task_name, gcal_cal_id, gcal_start_date, gcal_end_date, gcal_calendar_name = get_google_calendar_info(gcal_instance)
+                    gcal_task_name, gcal_cal_id, gcal_start_date, gcal_end_date, gcal_calendar_name = get_google_calendar_info(
+                        gcal_instance)
 
-                properties_dict = queries.base_dict.copy()
+                    properties_dict = queries.base_dict.copy()
 
-                properties_dict[constants.gcal_event_id_notion_name] = {
-                    "rich_text": [{
-                        'text': {
-                            'content': event_id
-                        }
-                    }]
-                }
-                properties_dict[constants.task_notion_name] = {
-                    "title": [{
-                        "text": {
-                            "content": gcal_task_name
-                        }
-                    }]
-                }
-                properties_dict[constants.current_calendar_id_notion_name] = {
-                    "rich_text": [{
-                        'text': {
-                            'content': gcal_cal_id
-                        }
-                    }]
-                }
-                properties_dict[constants.calendar_notion_name] = {
-                    "select": {
-                        "name": gcal_calendar_name
+                    properties_dict[constants.gcal_event_id_notion_name] = {
+                        "rich_text": [{
+                            'text': {
+                                'content': event_id
+                            }
+                        }]
                     }
-                }
-                properties_dict[constants.date_notion_name] = {
-                    "date": {
-                        "start": datetime_to_notion(gcal_start_date),
-                        "end": datetime_to_notion(gcal_end_date)
+                    properties_dict[constants.task_notion_name] = {
+                        "title": [{
+                            "text": {
+                                "content": gcal_task_name
+                            }
+                        }]
                     }
-                }
-                properties_dict[constants.on_gcal_notion_name] = {
-                    "checkbox": True
-                }
-
-                # This function create the Notion task with the needed information
-                notion.pages.create(
-                    **{
-                        "parent": {
-                            "database_id": env.DATABASE_ID,
-                        },
-                        "properties": properties_dict
+                    properties_dict[constants.current_calendar_id_notion_name] = {
+                        "rich_text": [{
+                            'text': {
+                                'content': gcal_cal_id
+                            }
+                        }]
                     }
-                )
+                    properties_dict[constants.calendar_notion_name] = {
+                        "select": {
+                            "name": gcal_calendar_name
+                        }
+                    }
+                    properties_dict[constants.date_notion_name] = {
+                        "date": {
+                            "start": datetime_to_notion(gcal_start_date),
+                            "end": datetime_to_notion(gcal_end_date)
+                        }
+                    }
+                    properties_dict[constants.on_gcal_notion_name] = {
+                        "checkbox": True
+                    }
 
+                    # This function create the Notion task with the needed information
+                    notion.pages.create(
+                        **{
+                            "parent": {
+                                "database_id": env.DATABASE_ID,
+                            },
+                            "properties": properties_dict
+                        }
+                    )
+
+        return print(f"Success: {google_events} tasks have been exported GCal -> Notion")
+    else:
+        return print(f"No tasks to export GCal -> Notion")
 
 
 def done_tasks_change_color():
     notion_page = queries.query_all_tasks_done(notion)
 
+    result_list = notion_page['results']
 
-if __name__ == '__main__':
-    # Function to set GCalEventID to 'notInCalendar'
+    if len(result_list) > 0:
+        for result in result_list:
+            calendar_id = result['properties'][
+                constants.current_calendar_id_notion_name]['rich_text'][0]['text']['content']
+            event_id = result['properties'][
+                constants.gcal_event_id_notion_name]['rich_text'][0]['text']['content']
 
-    # Synchronization N2GCal
-    # export_tasks_notion_to_gcal()
-    # update_tasks_notion_to_gcal()
-    # Synchronization GCal2N
-    # update_tasks_gcal_to_notion()
-    # export_tasks_gcal_to_notion()
-    done_tasks_change_color()
+            gcal_instance = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
+
+            # Status = canceled means that the task has been deleted from Google Calendar
+            if not gcal_instance['status'] == 'cancelled':
+                summary = gcal_instance['summary']
+                source = gcal_instance['source']
+
+                body = {
+                    'colorId': env.DONE_TASK_COLOR,
+                    # Google API doesn't allow to update the event with empty values, so we have to re-pass them
+                    'start': gcal_instance['start'],
+                    'end': gcal_instance['end'],
+                    'summary': summary,
+                    'source': source
+                }
+
+                try:
+                    color = gcal_instance['colorId']
+                except KeyError:
+                    color = None
+                if color != env.DONE_TASK_COLOR:
+                    service.events().update(calendarId=calendar_id, body=body, eventId=event_id).execute()
+
+
+def update_tasks_no_time():
+    notion_page = queries.query_tasks_no_time(notion)
+
+    result_list = notion_page['results']
+
+    if len(result_list) > 0:
+        for result in result_list:
+            page_id = result['id']
+            print(result['properties'][constants.task_notion_name]['title'][0]['text']['content'])
+
+            # We update the GCal Event ID field in Notion to let know that it's not in Calendar
+            notion.pages.update(
+                **{
+                    "page_id": page_id,
+                    "properties": {
+                        constants.gcal_event_id_notion_name: {
+                            "rich_text": [{
+                                'text': {
+                                    'content': constants.text_not_in_calendar
+                                }
+                            }]
+                        }
+                    }
+                }
+            )

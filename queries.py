@@ -53,14 +53,14 @@ calendar_name_default_query = {
 
 # Checks if the task is 'Done'
 not_done_query = {
-    "property": constants.delete_notion_name,
+    "property": constants.done_notion_name,
     "checkbox": {
         "equals": False
     }
 }
 
 done_query = {
-    "property": constants.delete_notion_name,
+    "property": constants.done_notion_name,
     "checkbox": {
         "equals": True
     }
@@ -102,6 +102,13 @@ empty_calendar_query = {
     "property": constants.calendar_notion_name,
     "select": {
         "is_empty": True
+    }
+}
+
+gcal_event_id = {
+    "property": constants.gcal_event_id_notion_name,
+    "text": {
+        "is_not_empty": True
     }
 }
 
@@ -197,18 +204,23 @@ def query_tasks_already_synced(notion):
                     },
                     not_done_query
                 ]
-            },
+            }
         }
     )
 
     return notion_page
 
 
-def query_all_tasks_not_done(notion):
+def query_all_tasks_this_week(notion):
     notion_page = notion.databases.query(
         **{
             "database_id": env.DATABASE_ID,
-            "filter": not_done_query
+            "filter": {
+                "or": [
+                    today_date_query,
+                    next_week_query
+                ]
+            }
         }
     )
     return notion_page
@@ -218,7 +230,34 @@ def query_all_tasks_done(notion):
     notion_page = notion.databases.query(
         **{
             "database_id": env.DATABASE_ID,
-            "filter": done_query
+            "filter": {
+                "and": [
+                    gcal_event_id,
+                    on_gcal_query,
+                    done_query,
+                    {
+                        "or": [
+                            today_date_query,
+                            next_week_query
+                        ]
+                    },
+                ]
+            }
+        }
+    )
+    return notion_page
+
+
+def query_tasks_no_time(notion):
+    notion_page = notion.databases.query(
+        **{
+            "database_id": env.DATABASE_ID,
+            "filter": {
+                "property": "Do Date",
+                "date": {
+                    "is_empty": True
+                }
+            }
         }
     )
     return notion_page
